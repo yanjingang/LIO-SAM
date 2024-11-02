@@ -1,4 +1,6 @@
 import os
+import launch
+import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -21,12 +23,20 @@ def generate_launch_description():
 
     print("urdf_file_name : {}".format(xacro_path))
 
+
     return LaunchDescription([
         params_declare,
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             arguments='0.0 0.0 0.0 0.0 0.0 0.0 map odom'.split(' '),
+            parameters=[parameter_file],
+            output='screen'
+            ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments='0.0 0.0 0.0 0.0 0.0 1.0 base_link lidar_link'.split(' '),
             parameters=[parameter_file],
             output='screen'
             ),

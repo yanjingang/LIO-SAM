@@ -62,7 +62,7 @@ using namespace std;
 
 typedef pcl::PointXYZI PointType;
 
-enum class SensorType { VELODYNE, OUSTER, LIVOX };
+enum class SensorType { VELODYNE, OUSTER, LIVOX , HESAI};
 
 class ParamServer : public rclcpp::Node
 {
@@ -86,6 +86,11 @@ public:
     bool useGpsElevation;
     float gpsCovThreshold;
     float poseCovThreshold;
+
+    // debug setting
+    bool debugLidarTimestamp;
+    bool debugImu;
+    bool debugGps;
 
     // Save pcd
     bool savePCD;
@@ -181,6 +186,13 @@ public:
         declare_parameter("poseCovThreshold", 25.0);
         get_parameter("poseCovThreshold", poseCovThreshold);
 
+        declare_parameter("debugLidarTimestamp", false);
+        get_parameter("debugLidarTimestamp", debugLidarTimestamp);
+        declare_parameter("debugImu", false);
+        get_parameter("debugImu", debugImu);
+        declare_parameter("debugGps", false);
+        get_parameter("debugGps", debugGps);
+
         declare_parameter("savePCD", false);
         get_parameter("savePCD", savePCD);
         declare_parameter("savePCDDirectory", "/Downloads/LOAM/");
@@ -200,6 +212,10 @@ public:
         else if (sensorStr == "livox")
         {
             sensor = SensorType::LIVOX;
+        }
+        else if (sensorStr == "hesai")
+        {
+            sensor = SensorType::HESAI;
         }
         else
         {
