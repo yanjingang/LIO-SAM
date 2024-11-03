@@ -206,7 +206,7 @@ public:
             tf2::fromMsg(thisImu.orientation, orientation);
             tf2::Matrix3x3(orientation).getRPY(imuRoll, imuPitch, imuYaw);
             std::cout << std::fixed << std::setprecision(6)
-                << "IMU time:" << thisImu.header.stamp.seconds()
+                << "IMU time:" << thisImu.header.stamp.sec
                 << " acc:" << thisImu.linear_acceleration.x << 
                     "," << thisImu.linear_acceleration.y << 
                     "," << thisImu.linear_acceleration.z
@@ -287,9 +287,9 @@ public:
                 // dst.y = src.y;
                 dst.z = src.z;
                 dst.intensity = src.intensity;
-                dst.ring = src.ring;
+                dst.ring = src.ring;                    // 激光点在竖直方向上所属的线束序号
                 //dst.tiSme = src.t * 1e-9f;
-                dst.time = src.timestamp - time_begin; // s
+                dst.time = src.timestamp - time_begin;  // s，当前激光点相对于当前激光帧第一个激光点的扫描时间
             }
         }
         else
@@ -308,7 +308,7 @@ public:
             std::cout << std::fixed << std::setprecision(12) 
                 << "Lidar points: size="<< laserCloudIn->points.size()
                 << " packet="<< laserCloudIn->points.size()
-                << " start="<< laserCloudIn->points[0].timestamp
+                << " start="<< laserCloudIn->points[0].time
                 << " end=" << laserCloudIn->points.back().time << "s" << std::endl;
         }
 
