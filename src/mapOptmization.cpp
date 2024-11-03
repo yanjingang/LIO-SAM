@@ -801,6 +801,15 @@ public:
                 transformTobeMapped[2] = 0;
 
             lastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imu_roll_init, cloudInfo.imu_pitch_init, cloudInfo.imu_yaw_init); // save imu before return;
+
+            // if (debugGps) {
+            //     // std::cout << "GPS: " << gps_transform.matrix() << std::endl;
+            //     std::cout << "initial gps yaw: " << yaw << std::endl;
+            //     std::cout << "GPS Position: " << alignedGPS.pose.pose.position.x
+            //             << "," << alignedGPS.pose.pose.position.y << ", "
+            //             << alignedGPS.pose.pose.position.z << std::endl;
+            //     std::cout << "GPS LLA: " << transLLA.transpose() << std::endl;
+            // }
             return;
         }
 

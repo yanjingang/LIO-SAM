@@ -20,8 +20,8 @@
     poseCovThreshold: 25.0                       # m^2, threshold for using GPS data
 
     # debug setting
-    debugLidarTimestamp: false
-    debugImu: false
+    debugLidarTimestamp: true
+    debugImu: true
     debugGps: false
 
     # Export settings
@@ -54,7 +54,7 @@
     # extrinsicRPY: [ 0.0,  1.0,  0.0,
     #                -1.0,  0.0,  0.0,
     #                 0.0,  0.0,  1.0 ]
-    extrinsicTrans:  [0.00780198, 0.052049, 0.1086247]
+    extrinsicTrans:  [0.0, 0.0, 0.0]
     extrinsicRot:    [1.0,  0.0,  0.0,
                        0.0,  1.0,  0.0,
                        0.0,  0.0, 1.0 ]

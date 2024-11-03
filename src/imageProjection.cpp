@@ -199,22 +199,22 @@ public:
         std::lock_guard<std::mutex> lock1(imuLock);
         imuQueue.push_back(thisImu);
 
-        // debug IMU data
-        // cout << std::setprecision(6);
-        // cout << "IMU acc: " << endl;
-        // cout << "x: " << thisImu.linear_acceleration.x << 
-        //       ", y: " << thisImu.linear_acceleration.y << 
-        //       ", z: " << thisImu.linear_acceleration.z << endl;
-        // cout << "IMU gyro: " << endl;
-        // cout << "x: " << thisImu.angular_velocity.x << 
-        //       ", y: " << thisImu.angular_velocity.y << 
-        //       ", z: " << thisImu.angular_velocity.z << endl;
-        // double imuRoll, imuPitch, imuYaw;
-        // tf2::Quaternion orientation;
-        // tf2::fromMsg(thisImu.orientation, orientation);
-        // tf2::Matrix3x3(orientation).getRPY(imuRoll, imuPitch, imuYaw);
-        // cout << "IMU roll pitch yaw: " << endl;
-        // cout << "roll: " << imuRoll << ", pitch: " << imuPitch << ", yaw: " << imuYaw << endl << endl;
+        if (debugImu) {
+            // debug IMU data
+            double imuRoll, imuPitch, imuYaw;
+            tf2::Quaternion orientation;
+            tf2::fromMsg(thisImu.orientation, orientation);
+            tf2::Matrix3x3(orientation).getRPY(imuRoll, imuPitch, imuYaw);
+            std::cout << std::fixed << std::setprecision(6)
+                << "IMU time:" << thisImu.header.stamp.seconds()
+                << " acc:" << thisImu.linear_acceleration.x << 
+                    "," << thisImu.linear_acceleration.y << 
+                    "," << thisImu.linear_acceleration.z
+                << " gyro:" << thisImu.angular_velocity.x << 
+                    "," << thisImu.angular_velocity.y << 
+                    "," << thisImu.angular_velocity.z
+                << " roll:" << imuRoll << " pitch:" << imuPitch << " yaw:" << imuYaw << std::endl;
+        }
     }
 
     void odometryHandler(const nav_msgs::msg::Odometry::SharedPtr odometryMsg)
@@ -281,10 +281,10 @@ public:
             for (size_t i = 0; i < tmpPandarCloudIn->size(); i++) {
                 auto &src = tmpPandarCloudIn->points[i];
                 auto &dst = laserCloudIn->points[i];
-                //dst.x = src.y * -1;
-                //dst.y = src.x;
-                dst.x = src.x;
-                dst.y = src.y;
+                dst.x = src.y * -1;
+                dst.y = src.x;
+                // dst.x = src.x;
+                // dst.y = src.y;
                 dst.z = src.z;
                 dst.intensity = src.intensity;
                 dst.ring = src.ring;
@@ -304,9 +304,12 @@ public:
         timeScanEnd = timeScanCur + laserCloudIn->points.back().time;
     
         if (debugLidarTimestamp) {
-            std::cout << std::fixed << std::setprecision(12) << "end time from pcd and size: "
-                      << laserCloudIn->points.back().time
-                      << ", " << laserCloudIn->points.size() << std::endl;
+            // 这里输出的点云time时间戳单位是秒，值在0.0-0.1s之间，因为机械激光雷达扫描一圈得到一个点云的时间一般是0.1s
+            std::cout << std::fixed << std::setprecision(12) 
+                << "Lidar points: size="<< laserCloudIn->points.size()
+                << " packet="<< laserCloudIn->points.size()
+                << " start="<< laserCloudIn->points[0].timestamp
+                << " end=" << laserCloudIn->points.back().time << "s" << std::endl;
         }
 
         // remove Nan

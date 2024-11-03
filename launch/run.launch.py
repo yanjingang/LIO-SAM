@@ -33,13 +33,20 @@ def generate_launch_description():
             parameters=[parameter_file],
             output='screen'
             ),
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            arguments='0.0 0.0 0.0 0.0 0.0 1.0 base_link lidar_link'.split(' '),
-            parameters=[parameter_file],
-            output='screen'
-            ),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments='0.0 0.0 0.0 0.0 0.0 1.0 chassis_link lidar_link'.split(' '),
+        #     parameters=[parameter_file],
+        #     output='screen'
+        #     ),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments='0.0 0.0 0.0 0.0 0.0 1.0 lidar_link imu_link'.split(' '),
+        #     parameters=[parameter_file],
+        #     output='screen'
+        #     ),
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
