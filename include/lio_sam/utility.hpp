@@ -327,25 +327,25 @@ public:
         usleep(100);
     }
 
+     // 将imu信息转换到雷达坐标系下表达,其实也就是获得雷达运动的加速度、角速度和姿态信息
     sensor_msgs::msg::Imu imuConverter(const sensor_msgs::msg::Imu& imu_in)
     {
         sensor_msgs::msg::Imu imu_out = imu_in;
-        // rotate acceleration
+        // rotate acceleration 将加速度转换到雷达坐标系下表达
         Eigen::Vector3d acc(imu_in.linear_acceleration.x, imu_in.linear_acceleration.y, imu_in.linear_acceleration.z);
         acc = extRot * acc;
         imu_out.linear_acceleration.x = acc.x();
         imu_out.linear_acceleration.y = acc.y();
         imu_out.linear_acceleration.z = acc.z();
-        // rotate gyroscope
+        // rotate gyroscope 将角速度转换到雷达坐标系下表达
         Eigen::Vector3d gyr(imu_in.angular_velocity.x, imu_in.angular_velocity.y, imu_in.angular_velocity.z);
         gyr = extRot * gyr;
         imu_out.angular_velocity.x = gyr.x();
         imu_out.angular_velocity.y = gyr.y();
         imu_out.angular_velocity.z = gyr.z();
-        // rotate roll pitch yaw
+        // rotate roll pitch yaw 通过imu的姿态信息来表达雷达的姿态信息
         Eigen::Quaterniond q_from(imu_in.orientation.w, imu_in.orientation.x, imu_in.orientation.y, imu_in.orientation.z);
         Eigen::Quaterniond q_final = q_from * extQRPY;
-        // Eigen::Quaterniond q_final = q_from;
         imu_out.orientation.x = q_final.x();
         imu_out.orientation.y = q_final.y();
         imu_out.orientation.z = q_final.z();
@@ -398,6 +398,7 @@ void imuAccel2rosAccel(sensor_msgs::msg::Imu *thisImuMsg, T *acc_x, T *acc_y, T 
 }
 
 
+// 将用四元素表示的imu姿态信息转换成欧拉角表示
 template<typename T>
 void imuRPY2rosRPY(sensor_msgs::msg::Imu *thisImuMsg, T *rosRoll, T *rosPitch, T *rosYaw)
 {
