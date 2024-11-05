@@ -25,13 +25,13 @@
     debugGps: false
 
     # Export settings
-    savePCD: true                               # https://github.com/TixiaoShan/LIO-SAM/issues/3
+    savePCD: true                                # https://github.com/TixiaoShan/LIO-SAM/issues/3
     savePCDDirectory: "/Downloads/LOAM/"         # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
 
     # Sensor Settings
-    sensor: hesai                               # lidar sensor type, either 'velodyne', 'ouster' or 'livox'
-    N_SCAN: 32                                   # number of lidar channels (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
-    Horizon_SCAN: 2000                            # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
+    sensor: hesai                                # lidar sensor type, either 'velodyne', 'ouster' or 'livox'
+    N_SCAN: 40                                   # Pardar40P有40个通道 number of lidar channels (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
+    Horizon_SCAN: 1800                           # Pardar40P水平分辨率 = 水平视场角 / 水平角分辨率 = 360 / 0.2(10hz时) = 1800 lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
     downsampleRate: 1                            # default: 1. Downsample your data if too many
     # points. i.e., 16 = 64 / 4, 16 = 16 / 1
     lidarMinRange: 1.0                           # default: 1.0, minimum lidar range to be used
