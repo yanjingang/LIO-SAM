@@ -58,7 +58,7 @@ using namespace std;
 
 typedef pcl::PointXYZI PointType;
 
-enum class SensorType { VELODYNE, OUSTER, LIVOX };
+enum class SensorType { VELODYNE, OUSTER, LIVOX, HESAI};
 
 class ParamServer
 {
@@ -186,6 +186,10 @@ public:
         else if (sensorStr == "livox")
         {
             sensor = SensorType::LIVOX;
+        }
+        else if (sensorStr == "hesai")
+        {
+            sensor = SensorType::HESAI;
         }
         else
         {
