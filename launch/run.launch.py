@@ -1,6 +1,4 @@
 import os
-import launch
-import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -17,36 +15,13 @@ def generate_launch_description():
 
     params_declare = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(
-            share_dir, 'config', 'params.yaml'),
+        default_value=os.path.join(share_dir, 'config', 'params_hesai.yaml'),
         description='FPath to the ROS2 parameters file to use.')
 
     print("urdf_file_name : {}".format(xacro_path))
 
-
     return LaunchDescription([
         params_declare,
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            arguments='0.0 0.0 0.0 0.0 0.0 0.0 map odom'.split(' '),
-            parameters=[parameter_file],
-            output='screen'
-            ),
-        # Node(
-        #     package='tf2_ros',
-        #     executable='static_transform_publisher',
-        #     arguments='0.0 0.0 0.0 0.0 0.0 1.0 chassis_link lidar_link'.split(' '),
-        #     parameters=[parameter_file],
-        #     output='screen'
-        #     ),
-        # Node(
-        #     package='tf2_ros',
-        #     executable='static_transform_publisher',
-        #     arguments='0.0 0.0 0.0 0.0 0.0 1.0 lidar_link imu_link'.split(' '),
-        #     parameters=[parameter_file],
-        #     output='screen'
-        #     ),
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
@@ -81,6 +56,13 @@ def generate_launch_description():
             package='lio_sam',
             executable='lio_sam_mapOptimization',
             name='lio_sam_mapOptimization',
+            parameters=[parameter_file],
+            output='screen'
+        ),
+        Node(
+            package='lio_sam',
+            executable='lio_sam_transformFusion',
+            name='lio_sam_transformFusion',
             parameters=[parameter_file],
             output='screen'
         ),

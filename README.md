@@ -1,281 +1,211 @@
-# LIO-SAM
+## 文章解读
+* :heart_decoration: [Blog](https://zeal-up.github.io/2023/03/13/lio_sam/intro/)
+* :six_pointed_star: [知乎](https://www.zhihu.com/column/c_1619085291536433152)
 
-**A real-time lidar-inertial odometry package. We strongly recommend the users read this document thoroughly and test the package with the provided dataset first. A video of the demonstration of the method can be found on [YouTube](https://www.youtube.com/watch?v=A0H8CoORZJU).**
+## 本项目目的及特点介绍
+[LIOSAM]源代码虽然不能说庞大，甚至可以说简单，因为整个代码库主要只要5个文件。
+![原始src目录](./docs/imgs/org_files.png)
+但是里面每个模块都通过ROS的topic与其他模块有紧密的联系。
+整个的流程对新手十分不友好，下图是[LIOSAM]原本运行时的`rqt_graph`
 
-<p align='center'>
-    <img src="./config/doc/demo.gif" alt="drawing" width="800"/>
-</p>
+![原始rqt_graph](./docs/imgs/org_rqtgraph.png)
 
-<p align='center'>
-    <img src="./config/doc/device-hand-2.png" alt="drawing" width="200"/>
-    <img src="./config/doc/device-hand.png" alt="drawing" width="200"/>
-    <img src="./config/doc/device-jackal.png" alt="drawing" width="200"/>
-    <img src="./config/doc/device-boat.png" alt="drawing" width="200"/>
-</p>
 
-## Menu
+第二个复杂之处在与LIOSAM框架设计到的知识点和工具较多，至少要熟悉`ROS,gtsam,pcl`几个库，算法层面需要熟悉`点云匹配、IMU积分、因子图、三维转换`等。
+对于熟悉SLAM的人来说可能较为简单上手，但是对于新入门的人来说则一开始会一头雾水。
 
-  - [**System architecture**](#system-architecture)
+基于上述这些原因，笔者进行了[SPL-LIO-SAM](Simple Lio Sam)项目，希望能够以最大幅度帮助初学者理解[LIOSAM]框架及里面的算法细节。
+本项目对[LIOSAM]做了如下改进
 
-  - [**Notes on ROS2 branch**](#notes-on-ros2-branch)
+### 基于ROS2-humble实现
+虽然LIOSAM源码中有一个ros2分支，但该分支的维护者并不是原作者，而且已经长时间没有人维护，且该分支存在一些bug没有被修复。为了能够在进行本项目的学习过程中
+熟悉最新的ROS2框架，笔者在LIOSAM的ros2分支基础上，修复了存在的bug，同时将功能较为独立的`Transformfusion`类抽取成独立的类。
 
-  - [**Package dependency**](#dependency)
+为了便于上手及部署，笔者同时准备了适配的docker镜像供学习者使用。
 
-  - [**Package install**](#install)
+### 简化
+#### 话题发布的简化
+[LIOSAM]原始代码中有很多中间结果的发布，这些中间结果可以用来可视化及调试程序，但是对于学习者和开发者而言不仅意义不大，而且会在初始学习源码阶段误导学习者。
+本项目在话题发布上进行`大幅度简化`，简化后的设计如下：
+![节点及话题设计](./docs/imgs/Design-Node%26%26Topics.png)
 
-  - [**Prepare lidar data**](#prepare-lidar-data) (must read)
+简化后运行时的`rqt_graph`:
+![简化后的ros—grpah](./docs/imgs/spl_liosam_rosgraph.png)
 
-  - [**Prepare IMU data**](#prepare-imu-data) (must read)
+#### 坐标系简化
+[LIOSAM]中实用的坐标系并不复杂，但是作者提供的`urdf`包含了太多为了兼容性考虑的坐标系，这些坐标系对于实际运行和理解并没有用。因此，本项目基于ROS对坐标系的约束，将
+坐标系关系树简化为如下：
+![简化后的坐标系关系](./docs/imgs/Design-CoordinateSystem.png)
 
-  - [**Sample datasets**](#sample-datasets)
+#### 保留算法及定义完整性
+虽然本项目去除了很多非必要话题，同时对于一些非必要代码也进行了简化，但对一些学习算法有帮助的细节依旧保留。比如激光里程计在发布的时候有`mapping/odometry`和`mapping/odometry_incremental`两个话题，两个话题虽然类似但是背后却有很不同的函数，但同时两者合一又不影响算法的运行。因此采取的做法时在代码中保留这部分代码，同时加以解释，但发布时只发布其中一个话题。
 
-  - [**Run the package**](#run-the-package)
+### 完善的注释及流程图
+网上其实对[LIOSAM]源码的注释并不少，比如[LIO-SAM-note]和[LIO-SAM-DetailedNote]，还有一些blog也对源码做了解释，但是都不太完美，同时缺少流程性的组织。本项目借鉴了一些开源项目的注释，并加以完善，可以说，本项目是目前对[LIOSAM]注释最完善的开源项目。
+![部分注释图](./docs/imgs/comments.png)
 
-  - [**Other notes**](#other-notes)
+为了最为清晰的展示[LIOSAM]算法不同模块的流程，该项目还对各个模块流程进行梳理，建立了完善的流程图设计
+![Pipeline](./docs/imgs/Design-Pipelines.png)
+![imageProjection_top0](./docs/imgs/Design-imageProjection_top0.png)
+![imageProjection_top0](./docs/imgs/Design-imageProjection_top1.png)
 
-  - [**Issues**](#issues)
 
-  - [**Paper**](#paper)
+## 运行环境搭建
 
-  - [**TODO**](#todo)
+本项目提供基于`ROS2-humble`的镜像，并提供脚本可直接在镜像中启动可视化程序
 
-  - [**Related Package**](#related-package)
+### 数据
 
-  - [**Acknowledgement**](#acknowledgement)
+本项目同时提供转为`rosbag2`格式的数据包
+链接：https://pan.baidu.com/s/1hhHvn96uEsDYJNss3Z209Q 
+提取码：2478
 
-## System architecture
-
-<p align='center'>
-    <img src="./config/doc/system.png" alt="drawing" width="800"/>
-</p>
-
-We design a system that maintains two graphs and runs up to 10x faster than real-time.
-  - The factor graph in "mapOptimization.cpp" optimizes lidar odometry factor and GPS factor. This factor graph is maintained consistently throughout the whole test.
-  - The factor graph in "imuPreintegration.cpp" optimizes IMU and lidar odometry factor and estimates IMU bias. This factor graph is reset periodically and guarantees real-time odometry estimation at IMU frequency.
-
-## Notes on ROS2 branch
-
-There are some features of the original ROS1 version that are currently missing in this ROS2 version, namely:
-- Testing with Velodyne & Livox lidars and Microstrain IMUs
-- A launch file for the navsat module/GPS factor
-- The rviz2 configuration misses many elements
-
-This branch was tested with Ouster lidars, Xsens IMUs and SBG-Systems IMUs using the following ROS2 drivers:
-- [ros2_ouster_drivers](https://github.com/ros-drivers/ros2_ouster_drivers)
-- [bluespace_ai_xsens_ros_mti_driver](https://github.com/bluespace-ai/bluespace_ai_xsens_ros_mti_driver)
-- [sbg_ros2_driver](https://github.com/SBG-Systems/sbg_ros2_driver)
-
-In these tests, the IMU was mounted on the bottom of the lidar such that their x-axes pointed in the same direction. The parameters `extrinsicRot` and `extrinsicRPY` in `params.yaml` correspond to this constellation.
-
-## Dependencies
-
-Tested with ROS2 versions foxy and galactic on Ubuntu 20.04 and humble on Ubuntu 22.04
-- [ROS2](https://docs.ros.org/en/humble/Installation.html)
-  ```
-  sudo apt install ros-<ros2-version>-perception-pcl \
-		   ros-<ros2-version>-pcl-msgs \
-		   ros-<ros2-version>-vision-opencv \
-		   ros-<ros2-version>-xacro
-  ```
-- [gtsam](https://gtsam.org/get_started) (Georgia Tech Smoothing and Mapping library)
-  ```
-  # Add GTSAM-PPA
-  sudo add-apt-repository ppa:borglab/gtsam-release-4.1
-  sudo apt install libgtsam-dev libgtsam-unstable-dev
-  ```
-
-## Install
-
-Use the following commands to download and compile the package.
-
-  ```
-  cd ~/ros2_ws/src
-  git clone https://github.com/TixiaoShan/LIO-SAM.git
-  cd lio-sam
-  git checkout ros2
-  cd ..
-  colcon build
-  ```
-
-## Using Docker
-
-Build image (based on ROS2 Humble):
-
+```bash
+export DATA_DIR=/path/to/download/ros2bag/dir
 ```
-docker build -t liosam-humble-jammy .
+本项目中默认的配置文件`params_default.yaml`可以直接运行下面的数据：
+- park_dataset
+- walking_dataset
+- garden_dataset
+
+### 环境部署
+```bash
+git clone git@github.com:zeal-up/Simple-LIO-SAM.git
+cd Simple-LIO-SAM
+./docker_run.sh -h  # show help message
+./docker_run.sh -c /path/to/code/repo -d $DATA_DIR
+
+# ./docker_into.sh  # enter the container next time
 ```
 
-Once you have the image, you can start a container by using one of the following methods:
+### 编译
+```bash
+cd Simple-LIO-SAM
+./docker_into.sh
 
-1. `docker run`
-
-```
-docker run --init -it -d \
-  --name liosam-humble-jammy-container \
-  -v /etc/localtime:/etc/localtime:ro \
-  -v /etc/timezone:/etc/timezone:ro \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -e DISPLAY=$DISPLAY \
-  --runtime=nvidia --gpus all \
-  liosam-humble-jammy \
-  bash
+# 下面命令在镜像中执行
+cd ~/ros_ws/
+mkdir src && cd src &&ln -s /home/splsam/codes ./
+cd ..
+source /opt/ros/humble/setup.bash
+colcon build --packages-select lio_sam
 ```
 
-2. `docker compose`
+### 运行
+```bash
+# docker镜像下运行
+cd ~/ros_ws
+source ./install/setup.bash
+ros2 launch lio_sam run.launch.py 
 
-Start a docker compose container:
-
-```
-docker compose up -d
-```
-
-Stopping a docker compose container:
-```
-docker compose down
-```
-
-To enter into the running container use:
+# 新开终端
+cd Simple-LIO-SAM
+./docker_into.sh
+cd data/ros2/
+ros2 bag play ./park_dataset/ --topics /points_raw /imu_raw
 
 ```
-docker exec -it liosam-humble-jammy-container bash
-```
-## Prepare lidar data
-
-The user needs to prepare the point cloud data in the correct format for cloud deskewing, which is mainly done in "imageProjection.cpp". The two requirements are:
-  - **Provide point time stamp**. LIO-SAM uses IMU data to perform point cloud deskew. Thus, the relative point time in a scan needs to be known. The up-to-date Velodyne ROS driver should output this information directly. Here, we assume the point time channel is called "time." The definition of the point type is located at the top of the "imageProjection.cpp." "deskewPoint()" function utilizes this relative time to obtain the transformation of this point relative to the beginning of the scan. When the lidar rotates at 10Hz, the timestamp of a point should vary between 0 and 0.1 seconds. If you are using other lidar sensors, you may need to change the name of this time channel and make sure that it is the relative time in a scan.
-  - **Provide point ring number**. LIO-SAM uses this information to organize the point correctly in a matrix. The ring number indicates which channel of the sensor that this point belongs to. The definition of the point type is located at the top of "imageProjection.cpp." The up-to-date Velodyne ROS driver should output this information directly. Again, if you are using other lidar sensors, you may need to rename this information. Note that only mechanical lidars are supported by the package currently.
-
-## Prepare IMU data
-
-  - **IMU requirement**. Like the original LOAM implementation, LIO-SAM only works with a 9-axis IMU, which gives roll, pitch, and yaw estimation. The roll and pitch estimation is mainly used to initialize the system at the correct attitude. The yaw estimation initializes the system at the right heading when using GPS data. Theoretically, an initialization procedure like VINS-Mono will enable LIO-SAM to work with a 6-axis IMU. The performance of the system largely depends on the quality of the IMU measurements. The higher the IMU data rate, the better the system accuracy. We use Microstrain 3DM-GX5-25, which outputs data at 500Hz. We recommend using an IMU that gives at least a 200Hz output rate. Note that the internal IMU of Ouster lidar is an 6-axis IMU.
-
-  - **IMU alignment**. LIO-SAM transforms IMU raw data from the IMU frame to the Lidar frame, which follows the ROS REP-105 convention (x - forward, y - left, z - upward). To make the system function properly, the correct extrinsic transformation needs to be provided in "params.yaml" file. **The reason why there are two extrinsics is that my IMU (Microstrain 3DM-GX5-25) acceleration and attitude have different coordinates. Depending on your IMU manufacturer, the two extrinsics for your IMU may or may not be the same**.
-    - "extrinsicRot" in "params.yaml" is a rotation matrix that transforms IMU gyro and acceleometer measurements to lidar frame.
-    - "extrinsicRPY" in "params.yaml" is a rotation matrix that transforms IMU orientation to lidar frame.
-
-  - **IMU debug**. It's strongly recommended that the user uncomment the debug lines in "imuHandler()" of "imageProjection.cpp" and test the output of the transformed IMU data. The user can rotate the sensor suite to check whether the readings correspond to the sensor's movement. A YouTube video that shows the corrected IMU data can be found [here (link to YouTube)](https://youtu.be/BOUK8LYQhHs).
+运行时画面：
+![SplRunParkDataset](./docs/imgs/runtime.gif)
 
 
-<p align='center'>
-    <img src="./config/doc/imu-transform.png" alt="drawing" width="800"/>
-</p>
-<p align='center'>
-    <img src="./config/doc/imu-debug.gif" alt="drawing" width="800"/>
-</p>
+## 开发环境搭建
+由于本项目作者在使用`vscode`开发`c++`时经常会遇到无法快捷跳转问题（其实笔者发现有很多人在使用vscode开发时都会有这个问题），
+因此一并把解决方案写入项目中。
 
-## Sample datasets
+### vscode开发cpp函数快捷跳转
+1. 安装cpp扩展
+vscode侧边栏进入扩展选项（ctrl+shift+x)，搜索`c++`，安装`C/C++ Extension Pack`
+1. 打开项目
+> File->Open Folder
+1. 保存为工作区
+> File->Save Workspace as
+选择目标目录及文件（默认以`.code-workspace`结尾）
+1. 打开刚才保存的工作区文件
+> File->Open File
+选择刚才打开的工作区文件
+1. 对工作区添加`c++`库检索路径
+在刚才打开的工作区文件中，参考以下格式编辑
+```yaml
+{
+	"folders": [
+		{
+			"path": "../Simple-LIO-SAM"
+		},
+	],
+	"settings": {
+		"C_Cpp.default.includePath": [
+			"${default}",
+			"/usr/include/**",
+			"/usr/include/c++/9/",
+			"/usr/lib/gcc/x86_64-linux-gnu/8/include/",
+			"/opt/ros/humble/include/**",
 
-For privacy reasons, no data set can currently be made available for ROS2.
+			"${workspaceFolder}/include",
 
-README.md of the master branch contains some links to ROS1 rosbags. It is possible to use [ros1_bridge](https://github.com/ros2/ros1_bridge) with these rosbags, but verify timing behavior (message frequency in ROS2) first. Mind [DDS tuning](https://docs.ros.org/en/humble/How-To-Guides/DDS-tuning.html).
+            // 重点！！这里的路径要设置为ros2工作空间下lio_sam编译出来的头文件
+			"/path/to/ros2_ws/install/lio_sam/include/lio_sam"
 
-## Run the package
-
-1. Run the launch file:
-```
-ros2 launch lio_sam run.launch.py
-```
-
-2. Play existing bag files:
-```
-ros2 bag play your-bag.bag
-```
-
-## Save map
-```
-ros2 service call /lio_sam/save_map lio_sam/srv/SaveMap
-```
-```
-ros2 service call /lio_sam/save_map lio_sam/srv/SaveMap "{resolution: 0.2, destination: /Downloads/service_LOAM}"
-```
-## Other notes
-
-  - **Loop closure:** The loop function here gives an example of proof of concept. It is directly adapted from LeGO-LOAM loop closure. For more advanced loop closure implementation, please refer to [ScanContext](https://github.com/irapkaist/SC-LeGO-LOAM). Set the "loopClosureEnableFlag" in "params.yaml" to "true" to test the loop closure function. In Rviz, uncheck "Map (cloud)" and check "Map (global)". This is because the visualized map - "Map (cloud)" - is simply a stack of point clouds in Rviz. Their postion will not be updated after pose correction. The loop closure function here is simply adapted from LeGO-LOAM, which is an ICP-based method. Because ICP runs pretty slow, it is suggested that the playback speed is set to be "-r 1". You can try the Garden dataset for testing.
-
-<p align='center'>
-    <img src="./config/doc/loop-closure.gif" alt="drawing" width="350"/>
-    <img src="./config/doc/loop-closure-2.gif" alt="drawing" width="350"/>
-</p>
-
-  - **Using GPS:** The park dataset is provided for testing LIO-SAM with GPS data. This dataset is gathered by [Yewei Huang](https://robustfieldautonomylab.github.io/people.html). To enable the GPS function, change "gpsTopic" in "params.yaml" to "odometry/gps". In Rviz, uncheck "Map (cloud)" and check "Map (global)". Also check "Odom GPS", which visualizes the GPS odometry. "gpsCovThreshold" can be adjusted to filter bad GPS readings. "poseCovThreshold" can be used to adjust the frequency of adding GPS factor to the graph. For example, you will notice the trajectory is constantly corrected by GPS whey you set "poseCovThreshold" to 1.0. Because of the heavy iSAM optimization, it's recommended that the playback speed is "-r 1".
-
-<p align='center'>
-    <img src="./config/doc/gps-demo.gif" alt="drawing" width="400"/>
-</p>
-
-  - **KITTI:** Since LIO-SAM needs a high-frequency IMU for function properly, we need to use KITTI raw data for testing. One problem remains unsolved is that the intrinsics of the IMU are unknown, which has a big impact on the accuracy of LIO-SAM. Download the provided sample data and make the following changes in "params.yaml":
-    - extrinsicTrans: [-8.086759e-01, 3.195559e-01, -7.997231e-01]
-    - extrinsicRot: [9.999976e-01, 7.553071e-04, -2.035826e-03, -7.854027e-04, 9.998898e-01, -1.482298e-02, 2.024406e-03, 1.482454e-02, 9.998881e-01]
-    - extrinsicRPY: [9.999976e-01, 7.553071e-04, -2.035826e-03, -7.854027e-04, 9.998898e-01, -1.482298e-02, 2.024406e-03, 1.482454e-02, 9.998881e-01]
-    - N_SCAN: 64
-    - downsampleRate: 2 or 4
-    - loopClosureEnableFlag: true or false
-
-<p align='center'>
-    <img src="./config/doc/kitti-map.png" alt="drawing" width="300"/>
-    <img src="./config/doc/kitti-demo.gif" alt="drawing" width="300"/>
-</p>
-
-  - **Ouster lidar:** To make LIO-SAM work with Ouster lidar, some preparations needs to be done on hardware and software level.
-    - Hardware:
-      - Use an external IMU. LIO-SAM does not work with the internal 6-axis IMU of Ouster lidar. You need to attach a 9-axis IMU to the lidar and perform data-gathering.
-      - Configure the driver. Change "timestamp_mode" in your Ouster launch file to "TIME_FROM_PTP_1588" so you can have ROS format timestamp for the point clouds.
-    - Config:
-      - Change "sensor" in "params.yaml" to "ouster".
-      - Change "N_SCAN" and "Horizon_SCAN" in "params.yaml" according to your lidar, i.e., N_SCAN=128, Horizon_SCAN=1024.
-    - Gen 1 and Gen 2 Ouster:
-      It seems that the point coordinate definition might be different in different generations. Please refer to [Issue #94](https://github.com/TixiaoShan/LIO-SAM/issues/94) for debugging.
-
-<p align='center'>
-    <img src="./config/doc/ouster-device.jpg" alt="drawing" width="300"/>
-    <img src="./config/doc/ouster-demo.gif" alt="drawing" width="300"/>
-</p>
-
-## Issues
-
-  - **Zigzag or jerking behavior**: if your lidar and IMU data formats are consistent with the requirement of LIO-SAM, this problem is likely caused by un-synced timestamp of lidar and IMU data.
-
-  - **Jumpping up and down**: if you start testing your bag file and the base_link starts to jump up and down immediately, it is likely your IMU extrinsics are wrong. For example, the gravity acceleration has negative value.
-
-  - **mapOptimization crash**: it is usually caused by GTSAM. Please install the GTSAM specified in the README.md. More similar issues can be found [here](https://github.com/TixiaoShan/LIO-SAM/issues).
-
-  - **gps odometry unavailable**: it is generally caused due to unavailable transform between message frame_ids and robot frame_id (for example: transform should be available from "imu_frame_id" and "gps_frame_id" to "base_link" frame. Please read the Robot Localization documentation found [here](http://docs.ros.org/en/melodic/api/robot_localization/html/preparing_sensor_data.html).
-
-## Paper
-
-Thank you for citing [LIO-SAM (IROS-2020)](./config/doc/paper.pdf) if you use any of this code.
-```
-@inproceedings{liosam2020shan,
-  title={LIO-SAM: Tightly-coupled Lidar Inertial Odometry via Smoothing and Mapping},
-  author={Shan, Tixiao and Englot, Brendan and Meyers, Drew and Wang, Wei and Ratti, Carlo and Rus Daniela},
-  booktitle={IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-  pages={5135-5142},
-  year={2020},
-  organization={IEEE}
+		],
+		"C_Cpp.files.exclude": {
+			"**/.vscode": true,
+			"**/.vs": true
+		},
+		"C_Cpp.default.cStandard": "c17",
+		"C_Cpp.default.cppStandard": "c++17",
+		"python.analysis.include": [
+			"/opt/ros/humble/lib/python3.10/site-packages",
+		],
+		"python.autoComplete.extraPaths": [
+			"/opt/ros/humble/lib/python3.10/site-packages",
+		],
+		"python.analysis.extraPaths": [
+			"/opt/ros/humble/lib/python3.10/site-packages",
+		],
+	}
 }
 ```
+### 对工作区文件的解释
+其实主要起作用的是工作区文件中`settings->C_Cpp.default.includePath`字段内容，vscode的cpp扩展会读取该工作空间文件下
+的这个字段，并将里面的路径进行解析加到头文件解析路径中。
 
-Part of the code is adapted from [LeGO-LOAM](https://github.com/RobustFieldAutonomyLab/LeGO-LOAM).
-```
-@inproceedings{legoloam2018shan,
-  title={LeGO-LOAM: Lightweight and Ground-Optimized Lidar Odometry and Mapping on Variable Terrain},
-  author={Shan, Tixiao and Englot, Brendan},
-  booktitle={IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-  pages={4758-4765},
-  year={2018},
-  organization={IEEE}
-}
-```
+这里有两个路径要注意的
+1. `"${workspaceFolder}/include"`，也就是Simple-LIO-SAM仓库下的include路径
+2. `"/path/to/ros2_ws/install/lio_sam/include/lio_sam"`，这个要设置成你的ros工作空间对应的路径
 
-## TODO
 
-  - [ ] [Bug within imuPreintegration](https://github.com/TixiaoShan/LIO-SAM/issues/104)
+另外，如果发现自己路径设置完成，但是有些函数还提示下划线，要看看是不是那些函数是`c++17`或者更高的标准才支持的特性，在上面的配置文件中
+设置c++/c标准为17
 
-## Related Package
+### 其余注意
+1. 尽量不要用`/path/**`的格式添加include路径，虽然看起来很省事，但会影响检索效率
+1. 刚设置完路径需要等待vscode检索构建数据库，在vscode右下方状态条会提示正在进行检索
+1. 上面配置文件中`"python.analysis.extraPaths","python.autoComplete.extraPaths","python.analysis.include"`是设置python语法提示器的
+库检索路径，不同的python提示器插件会使用不同的路径。
 
-  - [Lidar-IMU calibration](https://github.com/chennuo0125-HIT/lidar_imu_calib)
-  - [LIO-SAM with Scan Context](https://github.com/gisbi-kim/SC-LIO-SAM)
+## 本项目所有文章
+1. [Simple-LIO-SAM——（一）项目简介](https://zeal-up.github.io/2023/03/13/lio_sam/intro/)
+1. [Simple-LIO-SAM——（二）环境搭建与运行](https://zeal-up.github.io/2023/03/14/lio_sam/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA%E4%B8%8E%E8%BF%90%E8%A1%8C/)
+1. [Simple-LIO-SAM——（三）总体流程认识](https://zeal-up.github.io/2023/03/16/lio_sam/%E6%80%BB%E4%BD%93%E6%B5%81%E7%A8%8B%E8%AE%A4%E8%AF%86/)
+1. [Simple-LIO-SAM——（四）utility文件解读](https://zeal-up.github.io/2023/03/22/lio_sam/utility%E6%96%87%E4%BB%B6%E8%A7%A3%E8%AF%BB/)
+1. [Simple-LIO-SAM——（五）点云去畸变模块](https://zeal-up.github.io/2023/03/22/lio_sam/imageProjection-doc/)
+1. [Simple-LIO-SAM——（六）特征提取模块](https://zeal-up.github.io/2023/03/22/lio_sam/featureExtraction-doc/)
+1. [Simple-LIO-SAM——（七）GTSAM快速入门](https://zeal-up.github.io/2023/03/27/lio_sam/gtsam-quickstart/)
+1. [Simple-LIO-SAM——（八）IMU预积分模块](https://zeal-up.github.io/2023/03/30/lio_sam/imuPreintegration-doc/)
+1. [Simple-LIO-SAM——（九）点云匹配算法详解](https://zeal-up.github.io/2023/04/06/lio_sam/pcdRegistration-doc/)
+1. [Simple-LIO-SAM——（十）后端优化模块详解](https://zeal-up.github.io/2023/04/11/lio_sam/mapOptimization-doc/)
 
-## Acknowledgement
 
-  - LIO-SAM is based on LOAM (J. Zhang and S. Singh. LOAM: Lidar Odometry and Mapping in Real-time).
+## Reference
+1. [LIO-SAM](https://github.com/TixiaoShan/LIO-SAM)
+2. [LIO-SAM paper](https://arxiv.org/abs/2007.00258)
+3. [This Project](https://github.com/zeal-up/Simple-LIO-SAM)
+4. [LIO-SAM-note](https://github.com/chennuo0125-HIT/LIO-SAM-note)
+5. [LIO-SAM-DetailedNote](https://github.com/smilefacehh/LIO-SAM-DetailedNote)
+
+
+[TixiaoShan]:https://github.com/TixiaoShan "作者Github"
+[LIOSAM]:https://arxiv.org/abs/2007.00258 "liosam论文"
+[spl]:https://github.com/zeal-up/Simple-LIO-SAM "Simple LIO-SAM"
+[LIO-SAM-note]:https://github.com/chennuo0125-HIT/LIO-SAM-note "LIO-SAM-note"
+[LIO-SAM-DetailedNote]:https://github.com/smilefacehh/LIO-SAM-DetailedNote "LIO-SAM-DetailedNote"

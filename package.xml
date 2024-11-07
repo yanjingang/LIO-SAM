@@ -5,10 +5,11 @@
   <version>1.0.0</version>
   <description>Lidar Odometry</description>
 
-  <maintainer email="shant@mit.edu">Tixiao Shan</maintainer>
+  <maintainer email="1156478780@qq.com">Zeal</maintainer>
 
   <license>TODO</license>
 
+  <author>Zeal</author>
   <author>Tixiao Shan</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -22,16 +23,11 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tf2_sensor_msgs</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>pcl_msgs</build_depend>
   <build_depend>tf2_eigen</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2</build_depend>
-  <build_depend>OpenCV</build_depend>
-  <build_depend>PCL</build_depend>
-  <build_depend>GTSAM</build_depend>
-  <build_depend>Eigen</build_depend>
+  <build_depend>pcl_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
 
   <exec_depend>rosidl_default_runtime</exec_depend>
   <exec_depend>rclcpp</exec_depend>
@@ -40,17 +36,13 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>pcl_msgs</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tf2_sensor_msgs</exec_depend>
   <exec_depend>tf2_eigen</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>tf2</exec_depend>
-  <exec_depend>OpenCV</exec_depend>
-  <exec_depend>PCL</exec_depend>
-  <exec_depend>GTSAM</exec_depend>
-  <exec_depend>Eigen</exec_depend>
+  <exec_depend>pcl_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
   
   <member_of_group>rosidl_interface_packages</member_of_group>
 
